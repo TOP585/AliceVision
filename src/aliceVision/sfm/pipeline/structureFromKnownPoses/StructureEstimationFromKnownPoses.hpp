@@ -43,6 +43,8 @@ public:
     sfmData::SfMData& sfmData,
     const feature::RegionsPerView& regionsPerView);
 
+  const matching::PairwiseMatches& getPutativesMatches() const { return _putativeMatches; }
+
 private:
   //--
   // DATA (temporary)

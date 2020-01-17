@@ -9,6 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
+#include <aliceVision/sfm/pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
@@ -112,6 +113,7 @@ int main(int argc, char **argv)
   size_t numMatchesToKeep = 0;
   bool useGridSort = true;
   bool exportDebugFiles = false;
+  bool matchFromCameraPosesKnown=false;
   const std::string fileExtension = "txt";
 
   po::options_description allParams(
@@ -174,7 +176,9 @@ int main(int argc, char **argv)
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-      "Range size.");
+      "Range size.")
+    ("matchFromCameraPosesKnown", po::value<bool>(&matchFromCameraPosesKnown)->default_value(matchFromCameraPosesKnown),
+      "Match from camera poses known");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -242,7 +246,7 @@ int main(int argc, char **argv)
   // a. Load SfMData (image view & intrinsics data)
 
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -283,8 +287,6 @@ int main(int argc, char **argv)
     filter.insert(pair.second);
   }
 
-  ALICEVISION_LOG_INFO("Putative matches");
-
   PairwiseMatches mapPutativesMatches;
 
   // allocate the right Matcher according the Matching requested method
@@ -293,7 +295,9 @@ int main(int argc, char **argv)
 
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  ALICEVISION_LOG_INFO("There are " + std::to_string(sfmData.getViews().size()) + " views and " + std::to_string(pairs.size()) + " image pairs.");
+  ALICEVISION_LOG_INFO("There are " << sfmData.getViews().size() << " views and " << pairs.size() << " image pairs.");
+
+  ALICEVISION_LOG_INFO("Load features and descriptors");
 
   // load the corresponding view regions
   RegionsPerView regionPerView;
@@ -306,16 +310,31 @@ int main(int argc, char **argv)
   // perform the matching
   system::Timer timer;
 
-  for(const feature::EImageDescriberType descType : describerTypes)
+  if(matchFromCameraPosesKnown)
   {
-    assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-    ALICEVISION_LOG_INFO(EImageDescriberType_enumToString(descType) + " Regions Matching");
+      // compute matches from known camera poses when you have an initialization on the camera poses
+      ALICEVISION_LOG_INFO("Putative matches from known poses");
 
-    // photometric matching of putative pairs
-    imageCollectionMatcher->Match(regionPerView, pairs, descType, mapPutativesMatches);
+      sfm::StructureEstimationFromKnownPoses structureEstimator;
+      structureEstimator.match(sfmData, pairs, regionPerView);
+      mapPutativesMatches = structureEstimator.getPutativesMatches();
+  }
+  else
+  {
+      ALICEVISION_LOG_INFO("Putative matches");
+      // match feature descriptors between them without geometric notion
 
-    // TODO: DELI
-    // if(!guided_matching) regionPerView.clearDescriptors()
+      for(const feature::EImageDescriberType descType : describerTypes)
+      {
+        assert(descType != feature::EImageDescriberType::UNINITIALIZED);
+        ALICEVISION_LOG_INFO(EImageDescriberType_enumToString(descType) + " Regions Matching");
+
+        // photometric matching of putative pairs
+        imageCollectionMatcher->Match(regionPerView, pairs, descType, mapPutativesMatches);
+
+        // TODO: DELI
+        // if(!guided_matching) regionPerView.clearDescriptors()
+      }
   }
 
   if(mapPutativesMatches.empty())

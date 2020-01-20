@@ -407,9 +407,9 @@ void generateFromVoctree(PairList& allMatches,
   }
 }
 
-void conditionVocTree(std::string treeName, bool withWeights, std::string weightsName, const EImageMatchingMode matchingMode, std::vector<std::string>& featuresFolders,
-                      sfmData::SfMData& sfmDataA, std::size_t nbMaxDescriptors, std::string sfmDataFilenameA, sfmData::SfMData& sfmDataB, std::string sfmDataFilenameB,
-                      const bool useMultiSfM, std::map<IndexT, std::string>& descriptorsFilesA, std::size_t numImageQuery, OrderedPairList& selectedPairs)
+void conditionVocTree(const std::string& treeName, bool withWeights, const std::string& weightsName, const EImageMatchingMode matchingMode, const std::vector<std::string>& featuresFolders,
+                      const sfmData::SfMData& sfmDataA, std::size_t nbMaxDescriptors, const std::string& sfmDataFilenameA, const sfmData::SfMData& sfmDataB, const std::string& sfmDataFilenameB,
+                      bool useMultiSfM, const std::map<IndexT, std::string>& descriptorsFilesA, std::size_t numImageQuery, OrderedPairList& selectedPairs)
 {
     if(treeName.empty())
     {
@@ -752,9 +752,9 @@ int main(int argc, char** argv)
       // For all cameras with valid extrinsic/intrinsic, we select the camera with common visibilities based on cameras' frustum.
       // We use an epsilon near value for the frustum, to ensure that mulitple images with a pure rotation will not intersect at the nodal point.
       PairSet pairs = sfm::FrustumFilter(sfmDataA, 0.01).getFrustumIntersectionPairs();
-      for(PairSet::iterator it=pairs.begin(); it != pairs.end(); it++)
+      for(const auto& p: pairs)
       {
-          selectedPairs[it->first].insert(it->second);
+          selectedPairs[p.first].insert(p.second);
       }
       break;
     }

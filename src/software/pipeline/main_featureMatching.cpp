@@ -309,19 +309,41 @@ int main(int argc, char **argv)
 
   // perform the matching
   system::Timer timer;
+  PairSet pairsPoseKnown;
+  PairSet pairsPoseUnknown;
 
   if(matchFromCameraPosesKnown)
   {
-      // compute matches from known camera poses when you have an initialization on the camera poses
-      ALICEVISION_LOG_INFO("Putative matches from known poses");
-
-      sfm::StructureEstimationFromKnownPoses structureEstimator;
-      structureEstimator.match(sfmData, pairs, regionPerView);
-      mapPutativesMatches = structureEstimator.getPutativesMatches();
+      for(const auto& p: pairs)
+      {
+        if(sfmData.isPoseAndIntrinsicDefined(p.first) && sfmData.isPoseAndIntrinsicDefined(p.second))
+        {
+            pairsPoseKnown.insert(p);
+        }
+        else
+        {
+            pairsPoseUnknown.insert(p);
+        }
+      }
   }
   else
   {
-      ALICEVISION_LOG_INFO("Putative matches");
+      pairsPoseUnknown = pairs;
+  }
+
+  if(!pairsPoseKnown.empty())
+  {
+    // compute matches from known camera poses when you have an initialization on the camera poses
+    ALICEVISION_LOG_INFO("Putative matches from known poses: " << pairsPoseKnown.size() << " image pairs.");
+
+    sfm::StructureEstimationFromKnownPoses structureEstimator;
+    structureEstimator.match(thresholdF, sfmData, pairsPoseKnown, regionPerView);
+    mapPutativesMatches = structureEstimator.getPutativesMatches();
+  }
+
+  if(!pairsPoseUnknown.empty())
+  {
+      ALICEVISION_LOG_INFO("Putative matches (unknown poses): " << pairsPoseUnknown.size() << " image pairs.");
       // match feature descriptors between them without geometric notion
 
       for(const feature::EImageDescriberType descType : describerTypes)
@@ -330,16 +352,17 @@ int main(int argc, char **argv)
         ALICEVISION_LOG_INFO(EImageDescriberType_enumToString(descType) + " Regions Matching");
 
         // photometric matching of putative pairs
-        imageCollectionMatcher->Match(regionPerView, pairs, descType, mapPutativesMatches);
+        imageCollectionMatcher->Match(regionPerView, pairsPoseUnknown, descType, mapPutativesMatches);
 
         // TODO: DELI
         // if(!guided_matching) regionPerView.clearDescriptors()
       }
+
   }
 
   if(mapPutativesMatches.empty())
   {
-    ALICEVISION_LOG_INFO("No putative matches.");
+    ALICEVISION_LOG_INFO("No putative feature matches.");
     // If we only compute a selection of matches, we may have no match.
     return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
   }

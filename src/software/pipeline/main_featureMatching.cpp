@@ -106,7 +106,7 @@ int main(int argc, char **argv)
   std::string nearestMatchingMethod = "ANN_L2";
   robustEstimation::ERobustEstimator geometricEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
   double geometricErrorMax = 0.0; //< the maximum reprojection error allowed for image matching with geometric validation
-  double thresholdF=0.0;
+  double knownPosesGeometricErrorMax=5.0;
   bool savePutativeMatches = false;
   bool guidedMatching = false;
   int maxIteration = 2048;
@@ -158,8 +158,9 @@ int main(int argc, char **argv)
     ("geometricError", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax), 
           "Maximum error (in pixels) allowed for features matching during geometric verification. "
           "If set to 0 it lets the ACRansac select an optimal value.")
-    ("thresholdF", po::value<double>(&thresholdF)->default_value(thresholdF),
-          "")
+    ("knownPosesGeometricErrorMax", po::value<double>(&knownPosesGeometricErrorMax)->default_value(knownPosesGeometricErrorMax),
+          "Maximum error (in pixels) allowed for features matching during geometric verification for non camera poses known. "
+          "If set to 0 it lets the ACRansac select an optimal value.")
     ("savePutativeMatches", po::value<bool>(&savePutativeMatches)->default_value(savePutativeMatches),
       "Save putative matches.")
     ("guidedMatching", po::value<bool>(&guidedMatching)->default_value(guidedMatching),
@@ -340,7 +341,7 @@ int main(int argc, char **argv)
     ALICEVISION_LOG_INFO("Putative matches from known poses: " << pairsPoseKnown.size() << " image pairs.");
 
     sfm::StructureEstimationFromKnownPoses structureEstimator;
-    structureEstimator.match(thresholdF, sfmData, pairsPoseKnown, regionPerView);
+    structureEstimator.match(sfmData, pairsPoseKnown, regionPerView, knownPosesGeometricErrorMax);
     mapPutativesMatches = structureEstimator.getPutativesMatches();
   }
 

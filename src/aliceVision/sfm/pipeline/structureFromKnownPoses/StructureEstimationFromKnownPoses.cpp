@@ -58,14 +58,14 @@ void PointsToMat(
 }
 
 /// Use geometry of the views to compute a putative structure from features and descriptors.
-void StructureEstimationFromKnownPoses::run(double thresholdF,
-  SfMData& sfmData,
+void StructureEstimationFromKnownPoses::run(SfMData& sfmData,
   const PairSet& pairs,
-  const feature::RegionsPerView& regionsPerView)
+  const feature::RegionsPerView& regionsPerView,
+  double knownPosesGeometricErrorMax)
 {
   sfmData.structure.clear();
 
-  match(thresholdF, sfmData, pairs, regionsPerView);
+  match(sfmData, pairs, regionsPerView, knownPosesGeometricErrorMax);
   filter(sfmData, pairs, regionsPerView);
   triangulate(sfmData, regionsPerView);
 }
@@ -73,10 +73,10 @@ void StructureEstimationFromKnownPoses::run(double thresholdF,
 // #define ALICEVISION_EXHAUSTIVE_MATCHING
 
 /// Use guided matching to find corresponding 2-view correspondences
-void StructureEstimationFromKnownPoses::match(double thresholdF,
-  const SfMData& sfmData,
+void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
   const PairSet& pairs,
-  const feature::RegionsPerView& regionsPerView)
+  const feature::RegionsPerView& regionsPerView,
+  double knownPosesGeometricErrorMax)
 {
   boost::progress_display my_progress_bar( pairs.size(), std::cout,
     "Compute pairwise fundamental guided matching:\n" );
@@ -140,7 +140,7 @@ void StructureEstimationFromKnownPoses::match(double thresholdF,
             regionsPerView.getRegions(it->second, descType),
             iterIntrinsicR->second->w(), iterIntrinsicR->second->h(),
             //descType,
-            Square(thresholdF), Square(0.8),
+            Square(knownPosesGeometricErrorMax), Square(0.8),
             matches
           );
       #endif

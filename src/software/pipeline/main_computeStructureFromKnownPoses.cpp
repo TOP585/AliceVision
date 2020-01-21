@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string outSfMDataFilename;
   std::vector<std::string> featuresFolders;
-
+  double knownPosesGeometricErrorMax = 5.0;
   // user optional parameters
 
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
@@ -59,7 +59,10 @@ int main(int argc, char **argv)
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.");
+      "Path to folder(s) in which computed matches are stored.")
+    ("knownPosesGeometricErrorMax", po::value<double>(&knownPosesGeometricErrorMax)->default_value(knownPosesGeometricErrorMax),
+        "Maximum error (in pixels) allowed for features matching during geometric verification for non camera poses known. "
+        "If set to 0 it lets the ACRansac select an optimal value.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -151,9 +154,8 @@ int main(int argc, char **argv)
   sfmData.structure.clear();
 
   // compute Structure from known camera poses
-  double thresholdF=0.0;
   sfm::StructureEstimationFromKnownPoses structureEstimator;
-  structureEstimator.match(thresholdF,sfmData, pairs, regionsPerView);
+  structureEstimator.match(sfmData, pairs, regionsPerView, knownPosesGeometricErrorMax);
 
   // unload descriptors before triangulation
   regionsPerView.clearDescriptors();

@@ -151,8 +151,9 @@ int main(int argc, char **argv)
   sfmData.structure.clear();
 
   // compute Structure from known camera poses
+  double thresholdF=0.0;
   sfm::StructureEstimationFromKnownPoses structureEstimator;
-  structureEstimator.match(sfmData, pairs, regionsPerView);
+  structureEstimator.match(thresholdF,sfmData, pairs, regionsPerView);
 
   // unload descriptors before triangulation
   regionsPerView.clearDescriptors();

@@ -19,7 +19,7 @@ class StructureEstimationFromKnownPoses
 public:
 
   /// Use geometry of the views to compute a putative structure from features and descriptors.
-  void run(
+  void run(double thresholdF,
     sfmData::SfMData& sfmData,
     const PairSet& pairs,
     const feature::RegionsPerView& regionsPerView);
@@ -27,7 +27,7 @@ public:
 public:
 
   /// Use guided matching to find corresponding 2-view correspondences
-  void match(
+  void match(double thresholdF,
     const sfmData::SfMData& sfmData,
     const PairSet& pairs,
     const feature::RegionsPerView& regionsPerView);

@@ -58,20 +58,22 @@ void PointsToMat(
 }
 
 /// Use geometry of the views to compute a putative structure from features and descriptors.
-void StructureEstimationFromKnownPoses::run(
+void StructureEstimationFromKnownPoses::run(double thresholdF,
   SfMData& sfmData,
   const PairSet& pairs,
   const feature::RegionsPerView& regionsPerView)
 {
   sfmData.structure.clear();
 
-  match(sfmData, pairs, regionsPerView);
+  match(thresholdF, sfmData, pairs, regionsPerView);
   filter(sfmData, pairs, regionsPerView);
   triangulate(sfmData, regionsPerView);
 }
 
+// #define ALICEVISION_EXHAUSTIVE_MATCHING
+
 /// Use guided matching to find corresponding 2-view correspondences
-void StructureEstimationFromKnownPoses::match(
+void StructureEstimationFromKnownPoses::match(double thresholdF,
   const SfMData& sfmData,
   const PairSet& pairs,
   const feature::RegionsPerView& regionsPerView)
@@ -104,23 +106,22 @@ void StructureEstimationFromKnownPoses::match(
       const Mat34 P_R = iterIntrinsicR->second.get()->get_projective_equivalent(poseR);
 
       const Mat3 F_lr = F_from_P(P_L, P_R);
-      const double thresholdF = 4.0;
       std::vector<feature::EImageDescriberType> commonDescTypes = regionsPerView.getCommonDescTypes(*it);
       
       matching::MatchesPerDescType allImagePairMatches;
       for(feature::EImageDescriberType descType: commonDescTypes)
       {
         std::vector<matching::IndMatch> matches;
-      #ifdef EXHAUSTIVE_MATCHING
+      #ifdef ALICEVISION_EXHAUSTIVE_MATCHING
         robustEstimation::GuidedMatching
           <Mat3, fundamental::kernel::EpipolarDistanceError>
           (
             F_lr,
             iterIntrinsicL->second.get(),
-            regionsPerView.getRegions(it->first),
+            regionsPerView.getRegions(it->first, descType),
             iterIntrinsicR->second.get(),
-            regionsPerView.getRegions(it->second),
-            descType,
+            regionsPerView.getRegions(it->second, descType),
+            // descType,
             Square(thresholdF), Square(0.8),
             matches
           );

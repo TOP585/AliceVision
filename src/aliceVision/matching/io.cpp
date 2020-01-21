@@ -99,9 +99,12 @@ void filterMatchesByViews(
 
 void filterTopMatches(
   PairwiseMatches & allMatches,
-  const int limitNum)
+  const int limitNum,
+  const int minNum)
 {
   if (limitNum <= 0)
+    return;
+  if (minNum <= 0 || minNum > limitNum)
     return;
 
   for(auto& matchesPerDesc: allMatches)
@@ -111,6 +114,8 @@ void filterTopMatches(
       IndMatches& m = matches.second;
       if (m.size() > limitNum)
         m.erase(m.begin()+limitNum, m.end());
+      if (m.size() < minNum)
+        m.erase(m.begin(), m.end());
     }
   }
 }
@@ -232,7 +237,8 @@ bool Load(
   const std::set<IndexT>& viewsKeysFilter,
   const std::vector<std::string>& folders,
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
-  const int maxNbMatches)
+  const int maxNbMatches,
+  const int minNbMatches)
 {
   std::size_t nbLoadedMatchFiles = 0;
   const std::string pattern = "matches.txt";
@@ -272,7 +278,9 @@ bool Load(
     filterMatchesByDesc(matches, descTypesFilter);
 
   if(maxNbMatches > 0)
-    filterTopMatches(matches, maxNbMatches);
+    filterTopMatches(matches, maxNbMatches, minNbMatches);
+  if(minNbMatches <= maxNbMatches)
+    filterTopMatches(matches, maxNbMatches, minNbMatches);
 
   ALICEVISION_LOG_TRACE("Matches per image pair (after filtering):");
   logMatches(matches);

@@ -61,11 +61,11 @@ void PointsToMat(
 void StructureEstimationFromKnownPoses::run(SfMData& sfmData,
   const PairSet& pairs,
   const feature::RegionsPerView& regionsPerView,
-  double knownPosesGeometricErrorMax)
+  double GeometricErrorMax)
 {
   sfmData.structure.clear();
 
-  match(sfmData, pairs, regionsPerView, knownPosesGeometricErrorMax);
+  match(sfmData, pairs, regionsPerView, GeometricErrorMax);
   filter(sfmData, pairs, regionsPerView);
   triangulate(sfmData, regionsPerView);
 }
@@ -76,7 +76,7 @@ void StructureEstimationFromKnownPoses::run(SfMData& sfmData,
 void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
   const PairSet& pairs,
   const feature::RegionsPerView& regionsPerView,
-  double knownPosesGeometricErrorMax)
+  double GeometricErrorMax)
 {
   boost::progress_display my_progress_bar( pairs.size(), std::cout,
     "Compute pairwise fundamental guided matching:\n" );
@@ -140,7 +140,7 @@ void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
             regionsPerView.getRegions(it->second, descType),
             iterIntrinsicR->second->w(), iterIntrinsicR->second->h(),
             //descType,
-            Square(knownPosesGeometricErrorMax), Square(0.8),
+            Square(GeometricErrorMax), Square(0.8),
             matches
           );
       #endif

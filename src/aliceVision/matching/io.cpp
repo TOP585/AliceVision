@@ -102,19 +102,19 @@ void filterTopMatches(
   const int limitNum,
   const int minNum)
 {
-  if (limitNum <= 0)
+  if (limitNum <= 0 && minNum <=0)
     return;
-  if (minNum <= 0 || minNum > limitNum)
-    return;
+  if (minNum > limitNum)
+    throw std::runtime_error("The minimum of matches is higher than the maximum of matches");
 
   for(auto& matchesPerDesc: allMatches)
   {
     for(auto& matches: matchesPerDesc.second)
     {
       IndMatches& m = matches.second;
-      if (m.size() > limitNum)
+      if (limitNum > 0 && m.size() > limitNum)
         m.erase(m.begin()+limitNum, m.end());
-      if (m.size() < minNum)
+      if (minNum > 0 && m.size() < minNum)
         m.erase(m.begin(), m.end());
     }
   }

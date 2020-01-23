@@ -114,7 +114,7 @@ int main(int argc, char **argv)
   size_t numMatchesToKeep = 0;
   bool useGridSort = true;
   bool exportDebugFiles = false;
-  bool matchFromCameraPosesKnown=false;
+  bool matchFromKnownCameraPoses = false;
   const std::string fileExtension = "txt";
 
   po::options_description allParams(
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
           "Maximum error (in pixels) allowed for features matching during geometric verification. "
           "If set to 0 it lets the ACRansac select an optimal value.")
     ("knownPosesGeometricErrorMax", po::value<double>(&knownPosesGeometricErrorMax)->default_value(knownPosesGeometricErrorMax),
-          "Maximum error (in pixels) allowed for features matching during geometric verification for non camera poses known. "
+          "Maximum error (in pixels) allowed for features matching guided by geometric information from known camera poses. "
           "If set to 0 it lets the ACRansac select an optimal value.")
     ("savePutativeMatches", po::value<bool>(&savePutativeMatches)->default_value(savePutativeMatches),
       "Save putative matches.")
@@ -181,8 +181,9 @@ int main(int argc, char **argv)
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
       "Range size.")
-    ("matchFromCameraPosesKnown", po::value<bool>(&matchFromCameraPosesKnown)->default_value(matchFromCameraPosesKnown),
-      "Match from camera poses known");
+    ("matchFromKnownCameraPoses", po::value<bool>(&matchFromKnownCameraPoses)->default_value(matchFromKnownCameraPoses),
+      "Enable the usage of geometric information from known camera poses to guide the feature matching. "
+      "If some cameras have unknown poses (so there is no geometric prior), the standard feature matching will be performed.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -316,7 +317,7 @@ int main(int argc, char **argv)
   PairSet pairsPoseKnown;
   PairSet pairsPoseUnknown;
 
-  if(matchFromCameraPosesKnown)
+  if(matchFromKnownCameraPoses)
   {
       for(const auto& p: pairs)
       {

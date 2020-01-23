@@ -22,7 +22,7 @@ public:
   void run(sfmData::SfMData& sfmData,
     const PairSet& pairs,
     const feature::RegionsPerView& regionsPerView,
-    double knownPosesGeometricErrorMax);
+    double GeometricErrorMax);
 
 public:
 
@@ -30,7 +30,7 @@ public:
   void match(const sfmData::SfMData& sfmData,
     const PairSet& pairs,
     const feature::RegionsPerView& regionsPerView,
-    double knownPosesGeometricErrorMax);
+    double GeometricErrorMax);
 
   /// Filter inconsistent correspondences by using 3-view correspondences on view triplets
   void filter(
